@@ -8,8 +8,16 @@ pub trait Entitie {
     fn get_height(&self) -> f32;
     fn get_theta(&self) -> f32;
     fn get_move_state(&self) -> &Ship;
+    fn get_entitie_type(&self) -> &EntitieType;
     // fn go(&mut self, _: Engine, _: Rotation);
 
+
+}
+
+pub enum EntitieType {
+    Ship1,
+    Ship2,
+    Bullet1,
 
 }
 
@@ -19,6 +27,7 @@ pub enum Ship {
     TurnLeft,
     TurnRight,
     BulletOn,
+    None,
 }
 
 pub enum Engine {
@@ -48,6 +57,7 @@ pub struct Player {
     turn_right: bool,
     fire_allowed: bool,
     ship_move: Ship,
+    ship_type: EntitieType,
 }
 
 impl Player {
@@ -62,6 +72,7 @@ impl Player {
             max_speed: 8.0,
             theta:  0.0,
             ship_move: Ship::EngineOff,
+            ship_type: EntitieType::Ship1,
             engine_on: false,
             turn_left: false,
             turn_right: false,
@@ -147,6 +158,10 @@ impl Entitie for Player {
     fn get_move_state(&self) -> &Ship {
         &self.ship_move
     }
+    fn get_entitie_type(&self) -> &EntitieType {
+        &self.ship_type
+    }
+
     
     
 }
@@ -160,6 +175,7 @@ pub struct Bullet {
     w: f32,
     h: f32,
     bullet_move: Ship,
+    bullet_type: EntitieType,
 }
 
 impl Bullet {
@@ -173,7 +189,8 @@ impl Bullet {
             vy: 10.0 * theta.sin(),
             w: 8.0, 
             h: 17.0,
-            bullet_move: Ship::BulletOn,
+            bullet_move: Ship::None,
+            bullet_type: EntitieType::Bullet1,
         }
     } 
 
@@ -201,5 +218,80 @@ impl Entitie for Bullet {
     }
     fn get_move_state(&self) -> &Ship {
         &self.bullet_move
+    }
+    fn get_entitie_type(&self) -> &EntitieType {
+        &self.bullet_type
+    }
+}
+
+pub struct Enemy {
+    x: f32,
+    y: f32,
+    vx: f32,
+    vy: f32,
+    theta: f32,
+    w: f32,
+    h: f32,
+    engine_on: bool,
+    turn_left: bool,
+    turn_right: bool,
+    enemy_move: Ship,
+    enemy_type: EntitieType,
+    view: Vec<(f32,f32)>,
+}
+
+impl Enemy {
+    pub fn new(xo: f32, yo: f32, to: f32) -> tetra::Result<Enemy> {
+        let theta = to;
+        Ok(Enemy{
+            x: xo,
+            y: yo,
+            theta,
+            vx: 0.0,
+            vy: 0.0,
+            w: 38.0, 
+            h: 40.0,
+            engine_on: false,
+            turn_left: false,
+            turn_right: false,
+            enemy_move: Ship::None,
+            enemy_type: EntitieType::Ship2,
+            view: Vec::new(),
+        })
+    }
+    pub fn update(&mut self, player: &Player, postion_list: &Vec<(f32, f32)>) {
+        let d = ((self.x - player.get_x()).powi(2) + (self.y - player.get_y()).powi(2)).sqrt();
+        let dir = (player.get_y()- self.y).atan2( player.get_x() - self.x);
+        if self.theta > dir {
+            self.theta -= 0.07;
+        } else if self.theta < dir {
+            self.theta += 0.07;
+        }
+        println!("{} *** {}", 180.0 * dir / PI, 180.0 * self.theta / PI );
+
+    }
+}
+
+impl Entitie for Enemy {
+    fn get_x(&self) -> f32 {
+        self.x
+    }
+    fn get_y(&self) -> f32 {
+        self.y
+    }
+    fn get_width(&self) -> f32 {
+        self.w
+    }
+    fn get_height(&self) -> f32 {
+        self.h
+    }
+    fn get_theta(&self) -> f32 {
+        self.theta
+    }
+    fn get_move_state(&self) -> &Ship {
+        &self.enemy_move
+    }
+    fn get_entitie_type(&self) -> &EntitieType {
+        &self.enemy_type
     }
 }
